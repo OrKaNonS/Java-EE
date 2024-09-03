@@ -1,0 +1,82 @@
+1. tomcat서버 기동 => server.xml 로딩
+2. 웹어플리케이션 기동 => web.xml 로딩
+3. web.xml의 설정을 따라 DispatcherServlet로딩
+4. DispatcherServlet의 init parameter로 웹 관련 스프링빈 설정파일 /WEB-INF/conf/servletContext.xml로딩
+5. *.do 요청에 대해서는 DispatcherServlet이 작동
+6. HandlerMapping 설정에 따라 /person.do 요청이 오면 person컨트롤러를 호출
+7. PersonController에서 요청을 처리하는 HandleRequest메소드 호출
+8. handleRequest메소드는 ModelAndView생성하고 addObject메소드를 통해 모델을 설정
+   setViewName메소드를 통해 뷰의 이름을 설정
+9. ViewResolver는 컨트롤러에서 전달받은 뷰의 이름을 해석(뷰 이름 앞 : /jsp/person || 뷰 이름 뒤: .jsp)하여 뷰파일 지정
+10. 결정된 /jsp/person/person.jsp 파일에 모델을 전달
+11. person.jsp에서는 EL을 사용해서 모델의 데이터 출력
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+
+0. tomcat 실행 => server.xml 로딩
+
+1. http://localhost:8888/springmvc1/person.do 실행 => web.xml 로딩 => DispatcherServlet 로딩
+    <servlet>
+	    <servlet-name>dispatcherServlet</servlet-name>
+	    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+	    <init-param>
+	      <param-name>contextConfigLocation</param-name>
+	      <param-value>/WEB-INF/conf/servletContext.xml</param-value>
+	    </init-param>
+	</servlet>
+	  <servlet-mapping>
+	    <servlet-name>dispatcherServlet</servlet-name>
+	    <url-pattern>*.do</url-pattern>
+	  </servlet-mapping>
+	  
+	  => servletContext.xml 로딩
+
+2. servletContext(웹 설정) => 핸들러 맵핑 => 컨트롤러 클래스명:PersonController
+	servletContext.xml
+	<!-- HandlerMapping -->
+	        <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+	          <property name="mappings">
+	                  <props>
+	                          <prop key="/person.do">person</prop> => 웹에서 person.do 실행하면 person 컨트롤러 실행
+	                  </props>
+	          </property>        
+	        </bean>
+	
+	<!-- Controller -->
+	<bean id="person" class="springmvc1.controller.PersonController" />
+
+3. 컨트롤러 (PersonController)
+        public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+                ModelAndView mav = new ModelAndView();
+                mav.addObject("name","홍길동");
+                mav.addObject("age", 20);
+                mav.setViewName("person");
+                return mav;
+        } 
+		name => 홍길동
+		age => 20
+		ViewName => person (view 이름 던져줌)
+
+
+4. servletContext의 ViewResolver로 뷰 설정
+        <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                <property name="prefix" value="/jsp/person/" />
+                <property name="suffix" value=".jsp" />
+        </bean>
+
+		viewName은 person
+		=> "/jsp/person/person.jsp" 로 뷰 설정
+
+5. person.jsp
+    <%@ page language="java" contentType="text/html; charset=UTF-8"
+        pageEncoding="UTF-8"%>
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <title>springmvc1</title>
+    </head>
+    <body>
+            <h1>이름: ${name}</h1> // name => 홍길동
+            <h1>나이: ${age}</h1>  // age => 20
+    </body>
+    </html>
